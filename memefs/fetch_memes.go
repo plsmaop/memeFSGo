@@ -1,8 +1,9 @@
-package main
+package memefs
 
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"memefsGo/model"
 	"net/http"
@@ -10,8 +11,8 @@ import (
 	"strings"
 )
 
-var defaultClient = http.Client{}
 var knownExt = map[string]bool{"png": true, "jpg": true, "jpeg": true, "mp4": true, "webm": true}
+var defaultClient = http.Client{}
 
 func parsePosts(posts []interface{}) []model.Post {
 	parsedPosts := []model.Post{}
@@ -42,7 +43,7 @@ func parsePosts(posts []interface{}) []model.Post {
 
 		ext := extSeg[len(extSeg)-1]
 
-		if !knownExt[ext] {
+		if _, ok := knownExt[ext]; !ok {
 			continue
 		}
 
@@ -61,12 +62,11 @@ func parsePosts(posts []interface{}) []model.Post {
 		req.Header.Set("User-Agent", "PostmanRuntime/7.28.4")
 
 		resp, err := defaultClient.Do(req)
+		defer resp.Body.Close()
 		if err != nil {
 			log.Println(err)
 			continue
 		}
-
-		defer resp.Body.Close()
 
 		parsedPosts = append(parsedPosts, model.Post{
 			Title: title,
@@ -78,7 +78,7 @@ func parsePosts(posts []interface{}) []model.Post {
 	return parsedPosts
 }
 
-func FetchPosts(c *model.Config) []model.Post {
+func fetchPosts(c *model.MemeFSConfig) []model.Post {
 	req, err := http.NewRequest("GET", fmt.Sprintf("%s/.json?limit=%v", c.Subreddit, c.Limit), nil)
 	if err != nil {
 		log.Println(err)
@@ -89,12 +89,11 @@ func FetchPosts(c *model.Config) []model.Post {
 	req.Header.Set("User-Agent", "PostmanRuntime/7.28.4")
 
 	resp, err := defaultClient.Do(req)
+	defer resp.Body.Close()
 	if err != nil {
 		log.Println(err)
 		return []model.Post{}
 	}
-
-	defer resp.Body.Close()
 
 	var jsonData map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&jsonData)
@@ -111,4 +110,30 @@ func FetchPosts(c *model.Config) []model.Post {
 	}
 
 	return parsePosts(posts)
+}
+
+func fetchMeme(url string) ([]byte, bool) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Println(err)
+		return nil, false
+	}
+
+	// this is a workaround, otherwise reddit server will return 429
+	req.Header.Set("User-Agent", "PostmanRuntime/7.28.4")
+
+	resp, err := defaultClient.Do(req)
+	defer resp.Body.Close()
+	if err != nil {
+		log.Println(err)
+		return nil, false
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Println(err)
+		return nil, false
+	}
+
+	return data, true
 }
