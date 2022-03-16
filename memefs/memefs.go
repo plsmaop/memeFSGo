@@ -32,11 +32,11 @@ type MemeFS struct {
 	memes  []model.Post
 }
 
-var baseEntries = []fuse.DirEntry{fuse.DirEntry{
+var baseEntries = []fuse.DirEntry{{
 	Name: ".",
 	Mode: fuse.S_IFDIR,
 	Ino:  1,
-}, fuse.DirEntry{
+}, {
 	Name: "..",
 	Mode: fuse.S_IFDIR,
 	Ino:  2,

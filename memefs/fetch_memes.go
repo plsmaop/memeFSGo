@@ -62,11 +62,12 @@ func parsePosts(posts []interface{}) []model.Post {
 		req.Header.Set("User-Agent", "PostmanRuntime/7.28.4")
 
 		resp, err := defaultClient.Do(req)
-		defer resp.Body.Close()
 		if err != nil {
 			log.Println(err)
 			continue
 		}
+
+		defer resp.Body.Close()
 
 		parsedPosts = append(parsedPosts, model.Post{
 			Title: title,
@@ -89,11 +90,12 @@ func fetchPosts(c *model.MemeFSConfig) []model.Post {
 	req.Header.Set("User-Agent", "PostmanRuntime/7.28.4")
 
 	resp, err := defaultClient.Do(req)
-	defer resp.Body.Close()
 	if err != nil {
 		log.Println(err)
 		return []model.Post{}
 	}
+
+	defer resp.Body.Close()
 
 	var jsonData map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&jsonData)
@@ -123,11 +125,12 @@ func fetchMeme(url string) ([]byte, bool) {
 	req.Header.Set("User-Agent", "PostmanRuntime/7.28.4")
 
 	resp, err := defaultClient.Do(req)
-	defer resp.Body.Close()
 	if err != nil {
 		log.Println(err)
 		return nil, false
 	}
+
+	defer resp.Body.Close()
 
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
