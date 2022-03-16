@@ -3,12 +3,8 @@ Copyright © 2022 plsmaop allenivan@gmail.com
 */
 package main
 
-import "memefsGo/model"
+import "memefsGo/cmd"
 
 func main() {
-	// cmd.Execute()
-	FetchPosts(&model.Config{
-		Subreddit: "https://www.reddit.com/user/Hydrauxine/m/memes",
-		Limit:     20,
-	})
+	cmd.Execute()
 }

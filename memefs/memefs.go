@@ -152,6 +152,8 @@ func (m *MemeFS) getMeme(ino uint64) ([]byte, bool) {
 }
 
 func (m *MemeFS) startFetching(ctx context.Context) {
+	m.updateMemes(fetchPosts(&m.config))
+
 	ticker := time.NewTicker(time.Duration(m.config.RefreshSecs) * time.Second)
 	defer ticker.Stop()
 
@@ -168,7 +170,14 @@ func (m *MemeFS) startFetching(ctx context.Context) {
 func (m *MemeFS) Mount() error {
 	srv, err := fs.Mount(m.config.Mountpoint, &MemeFSRoot{
 		memeFS: m,
-	}, &fs.Options{})
+	}, &fs.Options{
+		MountOptions: fuse.MountOptions{
+			AllowOther: true,
+			FsName:     "MemeFS",
+			Name:       "meme",
+			// Options:    []string{"big_writes"},
+		}},
+	)
 
 	if err != nil {
 		return err

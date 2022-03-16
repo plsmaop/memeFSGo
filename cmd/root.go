@@ -5,6 +5,8 @@ Copyright © 2022 plsmaop allenivan@gmail.com
 package cmd
 
 import (
+	"memefsGo/memefs"
+	"memefsGo/model"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -22,7 +24,10 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) { },
+	Run: func(cmd *cobra.Command, args []string) {
+		fs := memefs.New(model.MemeFSConfig{})
+		fs.Mount()
+	},
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -43,5 +48,7 @@ func init() {
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.Flags().StringP("subreddit", "s", "https://www.reddit.com/user/Hydrauxine/m/memes", "Pick a subreddit or multi (requires subreddit URL)")
+	rootCmd.Flags().Int32P("limit", "l", 20, "How many memes to fetch at once")
+	rootCmd.Flags().Int32P("refresh_secs", "r", 600, "How often to refresh your memes in secs")
 }
