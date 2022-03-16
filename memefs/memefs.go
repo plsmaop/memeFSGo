@@ -152,13 +152,15 @@ func (m *MemeFS) getMeme(ino uint64) ([]byte, bool) {
 }
 
 func (m *MemeFS) startFetching(ctx context.Context) {
+	ticker := time.NewTicker(time.Duration(m.config.RefreshSecs) * time.Second)
+	defer ticker.Stop()
+
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		default:
+		case <-ticker.C:
 			m.updateMemes(fetchPosts(&m.config))
-			time.Sleep(time.Duration(m.config.RefreshSecs) * time.Second)
 		}
 	}
 }
