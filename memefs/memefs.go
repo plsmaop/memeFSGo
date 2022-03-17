@@ -182,6 +182,8 @@ func (m *MemeFS) Mount() error {
 		}},
 	)
 
+	defer m.Unmount()
+
 	if err != nil {
 		return err
 	}
@@ -198,7 +200,9 @@ func (m *MemeFS) Mount() error {
 }
 
 func (m *MemeFS) Unmount() {
-	m.fuseServer.Unmount()
+	if m.fuseServer != nil {
+		m.fuseServer.Unmount()
+	}
 }
 
 func New(config model.MemeFSConfig) *MemeFS {

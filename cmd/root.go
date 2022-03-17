@@ -73,6 +73,7 @@ This application fetches memes from the given subreddit periodically and mount t
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
+		log.Println(err)
 		os.Exit(1)
 	}
 }
