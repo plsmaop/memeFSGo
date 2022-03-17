@@ -2,6 +2,7 @@ package memefs
 
 import (
 	"context"
+	"log"
 	"memefsGo/model"
 	"sync"
 	"syscall"
@@ -127,6 +128,7 @@ func (m *MemeFS) updateMemes(posts []model.Post) {
 	defer m.mu.Unlock()
 
 	m.memes = append(m.memes, posts...)
+	log.Println("MEME NUM: ", len(m.memes))
 }
 
 func (m *MemeFS) getMemes() []model.Post {
@@ -193,6 +195,10 @@ func (m *MemeFS) Mount() error {
 	m.fuseServer.Wait()
 
 	return nil
+}
+
+func (m *MemeFS) Unmount() {
+	m.fuseServer.Unmount()
 }
 
 func New(config model.MemeFSConfig) *MemeFS {

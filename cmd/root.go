@@ -5,9 +5,12 @@ Copyright © 2022 plsmaop allenivan@gmail.com
 package cmd
 
 import (
+	"log"
 	"memefsGo/memefs"
 	"memefsGo/model"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/spf13/cobra"
 )
@@ -46,6 +49,17 @@ This application fetches memes from the given subreddit periodically and mount t
 			RefreshSecs: refreshSecs,
 			Debug:       debug,
 		})
+
+		defer fs.Unmount()
+
+		sig := make(chan os.Signal)
+		signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
+		go func() {
+			<-sig
+			log.Println("MemeFS stop......")
+			fs.Unmount()
+		}()
+
 		if err := fs.Mount(); err != nil {
 			return err
 		}
