@@ -1,6 +1,7 @@
 package memefs
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -21,7 +22,7 @@ func initGetRequest(url string) (*http.Request, error) {
 	}
 
 	// this is a workaround, otherwise reddit server will return 429
-	req.Header.Set("User-Agent", "MemeFS")
+	req.Header.Set("User-Agent", "MemeFS Fetcher")
 	return req, nil
 }
 
@@ -99,11 +100,7 @@ func fetchPosts(c *model.MemeFSConfig) []model.Post {
 
 	defer resp.Body.Close()
 
-	s, err := io.ReadAll(resp.Body)
-	log.Panicln(string(s))
-
-	return []model.Post{}
-	/* var jsonData map[string]interface{}
+	var jsonData map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&jsonData)
 
 	if err != nil {
@@ -117,7 +114,7 @@ func fetchPosts(c *model.MemeFSConfig) []model.Post {
 		return []model.Post{}
 	}
 
-	return parsePosts(posts) */
+	return parsePosts(posts)
 }
 
 func fetchMeme(url string) ([]byte, bool) {

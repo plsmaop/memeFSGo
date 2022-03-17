@@ -3,6 +3,7 @@ package memefs
 import (
 	"context"
 	"log"
+	"memefsGo/helper"
 	"memefsGo/model"
 	"sync"
 	"syscall"
@@ -12,13 +13,7 @@ import (
 	"github.com/hanwen/go-fuse/v2/fuse"
 )
 
-type MemeFSRoot struct {
-	fs.Inode
-
-	memeFS *MemeFS
-}
-
-type MemeFile struct {
+type MemeFSNode struct {
 	fs.Inode
 	fuse.Attr
 
@@ -33,35 +28,38 @@ type MemeFS struct {
 	memes  []model.Post
 }
 
-var baseEntries = []fuse.DirEntry{{
-	Name: ".",
-	Mode: fuse.S_IFDIR,
-	Ino:  1,
-}, {
-	Name: "..",
-	Mode: fuse.S_IFDIR,
-	Ino:  2,
-}}
+func (m *MemeFS) getCurOwner() fuse.Owner {
+	uid, gid := helper.GetCurUIDAndGID()
+	return fuse.Owner{
+		Uid: uid,
+		Gid: gid,
+	}
+}
 
-func (m *MemeFSRoot) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
+func (m *MemeFSNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
 	m.memeFS.mu.RLock()
 	defer m.memeFS.mu.RUnlock()
 
+	ttl := time.Second
+	owner := m.memeFS.getCurOwner()
+	now := time.Now()
 	for ind, post := range m.memeFS.memes {
 		if name != post.Title {
 			continue
 		}
 
-		ttl := time.Second
 		ino := uint64(ind + 2)
 
 		attr := fuse.Attr{
-			Ino:  ino,
-			Size: post.Size,
-			Mode: fuse.S_IFREG,
+			Ino:     ino,
+			Size:    post.Size,
+			Mode:    fuse.S_IFREG,
+			Owner:   owner,
+			Ctime:   uint64(now.Unix()),
+			Crtime_: uint64(now.Unix()),
 		}
 
-		inode := m.NewInode(ctx, &MemeFile{Attr: attr, memeFS: m.memeFS}, fs.StableAttr{Mode: fuse.S_IFREG, Ino: ino})
+		inode := m.NewInode(ctx, &MemeFSNode{Attr: attr, memeFS: m.memeFS}, fs.StableAttr{Mode: fuse.S_IFREG, Ino: ino})
 		out.SetEntryTimeout(ttl)
 		out.SetAttrTimeout(ttl)
 		out.NodeId = ino
@@ -73,20 +71,8 @@ func (m *MemeFSRoot) Lookup(ctx context.Context, name string, out *fuse.EntryOut
 	return nil, syscall.ENOENT
 }
 
-func (m *MemeFSRoot) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
-
-	out.AttrValid = 1
-	out.Attr = fuse.Attr{
-		Ino:  1,
-		Mode: fuse.S_IFDIR,
-	}
-
-	return fs.OK
-}
-
-func (m *MemeFSRoot) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
+func (m *MemeFSNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
 	entries := []fuse.DirEntry{}
-	copy(entries, baseEntries)
 
 	for ind, post := range m.memeFS.getMemes() {
 		entries = append(entries, fuse.DirEntry{
@@ -99,7 +85,7 @@ func (m *MemeFSRoot) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) 
 	return fs.NewListDirStream(entries), fs.OK
 }
 
-func (m *MemeFile) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
+func (m *MemeFSNode) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
 
 	out.AttrValid = 1
 	out.Attr = m.Attr
@@ -107,7 +93,7 @@ func (m *MemeFile) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.AttrO
 	return fs.OK
 }
 
-func (m *MemeFile) Read(ctx context.Context, f fs.FileHandle, dest []byte, off int64) (fuse.ReadResult, syscall.Errno) {
+func (m *MemeFSNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, off int64) (fuse.ReadResult, syscall.Errno) {
 	data, ok := m.memeFS.getMeme(m.Attr.Ino)
 	if !ok {
 		return nil, syscall.ENOENT
@@ -116,12 +102,10 @@ func (m *MemeFile) Read(ctx context.Context, f fs.FileHandle, dest []byte, off i
 	return fuse.ReadResultData(data), fs.OK
 }
 
-var _ = (fs.NodeLookuper)((*MemeFSRoot)(nil))
-var _ = (fs.NodeGetattrer)((*MemeFSRoot)(nil))
-var _ = (fs.NodeReaddirer)((*MemeFSRoot)(nil))
-
-var _ = (fs.NodeGetattrer)((*MemeFile)(nil))
-var _ = (fs.NodeReader)((*MemeFile)(nil))
+var _ = (fs.NodeLookuper)((*MemeFSNode)(nil))
+var _ = (fs.NodeGetattrer)((*MemeFSNode)(nil))
+var _ = (fs.NodeReaddirer)((*MemeFSNode)(nil))
+var _ = (fs.NodeReader)((*MemeFSNode)(nil))
 
 func (m *MemeFS) updateMemes(posts []model.Post) {
 	m.mu.Lock()
@@ -170,15 +154,24 @@ func (m *MemeFS) startFetching(ctx context.Context) {
 }
 
 func (m *MemeFS) Mount() error {
-	srv, err := fs.Mount(m.config.Mountpoint, &MemeFSRoot{
+	owner := m.getCurOwner()
+	now := time.Now()
+	srv, err := fs.Mount(m.config.Mountpoint, &MemeFSNode{
 		memeFS: m,
+		Attr: fuse.Attr{
+			Ino:     1,
+			Mode:    fuse.S_IFDIR,
+			Owner:   owner,
+			Ctime:   uint64(now.Unix()),
+			Crtime_: uint64(now.Unix()),
+		},
 	}, &fs.Options{
 		MountOptions: fuse.MountOptions{
 			AllowOther: true,
 			FsName:     "MemeFS",
 			Name:       "meme",
 			Debug:      m.config.Debug,
-			Options:    []string{"ro"},
+			// Options:    []string{"ro"},
 		}},
 	)
 
