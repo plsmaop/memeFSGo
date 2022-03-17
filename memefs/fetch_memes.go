@@ -1,7 +1,6 @@
 package memefs
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -22,7 +21,7 @@ func initGetRequest(url string) (*http.Request, error) {
 	}
 
 	// this is a workaround, otherwise reddit server will return 429
-	req.Header.Set("User-Agent", "PostmanRuntime/7.28.4")
+	req.Header.Set("User-Agent", "MemeFS")
 	return req, nil
 }
 
@@ -90,6 +89,7 @@ func parsePosts(posts []interface{}) []model.Post {
 
 func fetchPosts(c *model.MemeFSConfig) []model.Post {
 	req, err := initGetRequest(fmt.Sprintf("%s/.json?limit=%v", c.Subreddit, c.Limit))
+	log.Println(req.Header.Get("User-Agent"))
 
 	resp, err := defaultClient.Do(req)
 	if err != nil {
@@ -99,11 +99,15 @@ func fetchPosts(c *model.MemeFSConfig) []model.Post {
 
 	defer resp.Body.Close()
 
-	var jsonData map[string]interface{}
+	s, err := io.ReadAll(resp.Body)
+	log.Panicln(string(s))
+
+	return []model.Post{}
+	/* var jsonData map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&jsonData)
 
 	if err != nil {
-		log.Println(err)
+		log.Println("fetchPosts: decode error:", err)
 		return []model.Post{}
 	}
 
@@ -113,7 +117,7 @@ func fetchPosts(c *model.MemeFSConfig) []model.Post {
 		return []model.Post{}
 	}
 
-	return parsePosts(posts)
+	return parsePosts(posts) */
 }
 
 func fetchMeme(url string) ([]byte, bool) {
