@@ -175,7 +175,8 @@ func (m *MemeFS) Mount() error {
 			AllowOther: true,
 			FsName:     "MemeFS",
 			Name:       "meme",
-			// Options:    []string{"big_writes"},
+			Debug:      m.config.Debug,
+			Options:    []string{"ro"},
 		}},
 	)
 

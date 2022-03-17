@@ -14,6 +14,18 @@ import (
 var knownExt = map[string]bool{"png": true, "jpg": true, "jpeg": true, "mp4": true, "webm": true}
 var defaultClient = http.Client{}
 
+func initGetRequest(url string) (*http.Request, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	// this is a workaround, otherwise reddit server will return 429
+	req.Header.Set("User-Agent", "PostmanRuntime/7.28.4")
+	return req, nil
+}
+
 func parsePosts(posts []interface{}) []model.Post {
 	parsedPosts := []model.Post{}
 	for _, post := range posts {
@@ -52,14 +64,11 @@ func parsePosts(posts []interface{}) []model.Post {
 			continue
 		}
 
-		req, err := http.NewRequest("GET", rawUrl, nil)
+		req, err := initGetRequest(rawUrl)
 		if err != nil {
 			log.Println(err)
 			continue
 		}
-
-		// this is a workaround, otherwise reddit server will return 429
-		req.Header.Set("User-Agent", "PostmanRuntime/7.28.4")
 
 		resp, err := defaultClient.Do(req)
 		if err != nil {
@@ -80,14 +89,7 @@ func parsePosts(posts []interface{}) []model.Post {
 }
 
 func fetchPosts(c *model.MemeFSConfig) []model.Post {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/.json?limit=%v", c.Subreddit, c.Limit), nil)
-	if err != nil {
-		log.Println(err)
-		return []model.Post{}
-	}
-
-	// this is a workaround, otherwise reddit server will return 429
-	req.Header.Set("User-Agent", "PostmanRuntime/7.28.4")
+	req, err := initGetRequest(fmt.Sprintf("%s/.json?limit=%v", c.Subreddit, c.Limit))
 
 	resp, err := defaultClient.Do(req)
 	if err != nil {
@@ -115,14 +117,11 @@ func fetchPosts(c *model.MemeFSConfig) []model.Post {
 }
 
 func fetchMeme(url string) ([]byte, bool) {
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := initGetRequest(url)
 	if err != nil {
 		log.Println(err)
 		return nil, false
 	}
-
-	// this is a workaround, otherwise reddit server will return 429
-	req.Header.Set("User-Agent", "PostmanRuntime/7.28.4")
 
 	resp, err := defaultClient.Do(req)
 	if err != nil {
