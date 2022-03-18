@@ -68,6 +68,13 @@ This application fetches memes from the given subreddit periodically and mount t
 	},
 }
 
+func unmountWhenFUSEPanic(fs *memefs.MemeFS) {
+	if r := recover(); r != nil {
+		log.Println("panic:", r)
+		fs.Mount()
+	}
+}
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {

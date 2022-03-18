@@ -42,7 +42,7 @@ func (m *MemeFSNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut
 
 	ttl := time.Second
 	owner := m.memeFS.getCurOwner()
-	now := time.Now()
+	now := uint64(time.Now().Unix())
 	for ind, post := range m.memeFS.memes {
 		if name != post.Title {
 			continue
@@ -51,12 +51,14 @@ func (m *MemeFSNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut
 		ino := uint64(ind + 2)
 
 		attr := fuse.Attr{
-			Ino:     ino,
-			Size:    post.Size,
-			Mode:    fuse.S_IFREG,
-			Owner:   owner,
-			Ctime:   uint64(now.Unix()),
-			Crtime_: uint64(now.Unix()),
+			Ino:   ino,
+			Size:  post.Size,
+			Mode:  fuse.S_IFREG,
+			Owner: owner,
+			Atime: now,
+			Mtime: now,
+			Ctime: now,
+			// Crtime_: uint64(now.Unix()),
 		}
 
 		inode := m.NewInode(ctx, &MemeFSNode{Attr: attr, memeFS: m.memeFS}, fs.StableAttr{Mode: fuse.S_IFREG, Ino: ino})
@@ -72,7 +74,13 @@ func (m *MemeFSNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut
 }
 
 func (m *MemeFSNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno) {
-	entries := []fuse.DirEntry{}
+	entries := []fuse.DirEntry{{
+		Name: ".",
+		Mode: fuse.S_IFDIR,
+	}, {
+		Name: "..",
+		Mode: fuse.S_IFDIR,
+	}}
 
 	for ind, post := range m.memeFS.getMemes() {
 		entries = append(entries, fuse.DirEntry{
@@ -99,6 +107,8 @@ func (m *MemeFSNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, off
 		return nil, syscall.ENOENT
 	}
 
+	log.Println("read: ", m.Attr.Ino)
+
 	return fuse.ReadResultData(data), fs.OK
 }
 
@@ -112,7 +122,6 @@ func (m *MemeFS) updateMemes(posts []model.Post) {
 	defer m.mu.Unlock()
 
 	m.memes = append(m.memes, posts...)
-	log.Println("MEME NUM: ", len(m.memes))
 }
 
 func (m *MemeFS) getMemes() []model.Post {
@@ -155,15 +164,18 @@ func (m *MemeFS) startFetching(ctx context.Context) {
 
 func (m *MemeFS) Mount() error {
 	owner := m.getCurOwner()
-	now := time.Now()
+	now := uint64(time.Now().Unix())
 	srv, err := fs.Mount(m.config.Mountpoint, &MemeFSNode{
 		memeFS: m,
 		Attr: fuse.Attr{
-			Ino:     1,
-			Mode:    fuse.S_IFDIR,
-			Owner:   owner,
-			Ctime:   uint64(now.Unix()),
-			Crtime_: uint64(now.Unix()),
+			Ino:   1,
+			Mode:  fuse.S_IFDIR,
+			Owner: owner,
+			Atime: now,
+			Mtime: now,
+			Ctime: now,
+
+			// Crtime_: uint64(now.Unix()),
 		},
 	}, &fs.Options{
 		MountOptions: fuse.MountOptions{

@@ -90,11 +90,15 @@ func parsePosts(posts []interface{}) []model.Post {
 
 func fetchPosts(c *model.MemeFSConfig) []model.Post {
 	req, err := initGetRequest(fmt.Sprintf("%s/.json?limit=%v", c.Subreddit, c.Limit))
-	log.Println(req.Header.Get("User-Agent"))
 
 	resp, err := defaultClient.Do(req)
 	if err != nil {
 		log.Println(err)
+		return []model.Post{}
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		log.Println(resp.Status)
 		return []model.Post{}
 	}
 
