@@ -2,7 +2,6 @@ package memefs
 
 import (
 	"context"
-	"log"
 	"memefsGo/helper"
 	"memefsGo/model"
 	"sync"
@@ -101,13 +100,19 @@ func (m *MemeFSNode) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.Att
 	return fs.OK
 }
 
+func (m *MemeFSNode) Open(ctx context.Context, flags uint32) (fs.FileHandle, uint32, syscall.Errno) {
+
+	// We don't return a filehandle since we don't really need
+	// one.  The file content is immutable, so hint the kernel to
+	// cache the data.
+	return nil, fuse.FOPEN_KEEP_CACHE, fs.OK
+}
+
 func (m *MemeFSNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, off int64) (fuse.ReadResult, syscall.Errno) {
 	data, ok := m.memeFS.getMeme(m.Attr.Ino)
 	if !ok {
 		return nil, syscall.ENOENT
 	}
-
-	log.Println("read: ", m.Attr.Ino)
 
 	return fuse.ReadResultData(data), fs.OK
 }
@@ -115,6 +120,7 @@ func (m *MemeFSNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, off
 var _ = (fs.NodeLookuper)((*MemeFSNode)(nil))
 var _ = (fs.NodeGetattrer)((*MemeFSNode)(nil))
 var _ = (fs.NodeReaddirer)((*MemeFSNode)(nil))
+var _ = (fs.NodeOpener)((*MemeFSNode)(nil))
 var _ = (fs.NodeReader)((*MemeFSNode)(nil))
 
 func (m *MemeFS) updateMemes(posts []model.Post) {

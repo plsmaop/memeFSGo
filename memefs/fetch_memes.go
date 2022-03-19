@@ -1,6 +1,7 @@
 package memefs
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,7 +13,14 @@ import (
 )
 
 var knownExt = map[string]bool{"png": true, "jpg": true, "jpeg": true, "mp4": true, "webm": true}
-var defaultClient = http.Client{}
+
+// https://www.reddit.com/r/redditdev/comments/t8e8hc/getting_nothing_but_429_responses_when_using_go/
+// https://github.com/grafana/k6/issues/936
+var defaultClient = http.Client{
+	Transport: &http.Transport{
+		TLSNextProto: map[string]func(authority string, c *tls.Conn) http.RoundTripper{},
+	},
+}
 
 func initGetRequest(url string) (*http.Request, error) {
 	req, err := http.NewRequest("GET", url, nil)
