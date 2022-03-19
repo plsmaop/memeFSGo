@@ -61,7 +61,8 @@ This application fetches memes from the given subreddit periodically and mount t
 		}()
 
 		if err := fs.Mount(); err != nil {
-			return err
+			log.Println(err)
+			return nil
 		}
 
 		return nil

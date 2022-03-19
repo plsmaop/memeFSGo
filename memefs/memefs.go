@@ -128,11 +128,17 @@ func (m *MemeFSNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, off
 	return fuse.ReadResultData(m.data[off:end]), fs.OK
 }
 
+func (m *MemeFSNode) Release(ctx context.Context, f fs.FileHandle) syscall.Errno {
+	m.data = nil
+	return fs.OK
+}
+
 var _ = (fs.NodeLookuper)((*MemeFSNode)(nil))
 var _ = (fs.NodeGetattrer)((*MemeFSNode)(nil))
 var _ = (fs.NodeReaddirer)((*MemeFSNode)(nil))
 var _ = (fs.NodeOpener)((*MemeFSNode)(nil))
 var _ = (fs.NodeReader)((*MemeFSNode)(nil))
+var _ = (fs.NodeReleaser)((*MemeFSNode)(nil))
 
 func (m *MemeFS) updateMemes(posts []model.Post) {
 	m.mu.Lock()
