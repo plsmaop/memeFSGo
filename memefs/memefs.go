@@ -17,6 +17,7 @@ type MemeFSNode struct {
 	fuse.Attr
 
 	memeFS *MemeFS
+	data   []byte
 }
 
 type MemeFS struct {
@@ -101,20 +102,30 @@ func (m *MemeFSNode) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.Att
 }
 
 func (m *MemeFSNode) Open(ctx context.Context, flags uint32) (fs.FileHandle, uint32, syscall.Errno) {
+	data, ok := m.memeFS.getMeme(m.Attr.Ino)
+	if !ok {
+		return nil, 0, syscall.ENOENT
+	}
+
+	m.data = data
 
 	// We don't return a filehandle since we don't really need
-	// one.  The file content is immutable, so hint the kernel to
+	// one. The file content is immutable, so hint the kernel to
 	// cache the data.
 	return nil, fuse.FOPEN_KEEP_CACHE, fs.OK
 }
 
 func (m *MemeFSNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, off int64) (fuse.ReadResult, syscall.Errno) {
-	data, ok := m.memeFS.getMeme(m.Attr.Ino)
-	if !ok {
+	if m.data == nil || len(m.data) == 0 {
 		return nil, syscall.ENOENT
 	}
 
-	return fuse.ReadResultData(data), fs.OK
+	end := int(off) + len(dest)
+	if end > len(m.data) {
+		end = len(m.data)
+	}
+
+	return fuse.ReadResultData(m.data[off:end]), fs.OK
 }
 
 var _ = (fs.NodeLookuper)((*MemeFSNode)(nil))
@@ -146,7 +157,7 @@ func (m *MemeFS) getMeme(ino uint64) ([]byte, bool) {
 		m.mu.RLock()
 		defer m.mu.RUnlock()
 
-		url = m.memes[ino-3].Url
+		url = m.memes[ino-2].Url
 	}
 
 	return fetchMeme(url)

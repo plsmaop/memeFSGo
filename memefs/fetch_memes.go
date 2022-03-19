@@ -101,12 +101,12 @@ func fetchPosts(c *model.MemeFSConfig) []model.Post {
 
 	resp, err := defaultClient.Do(req)
 	if err != nil {
-		log.Println(err)
+		log.Println("fetchPosts: fetch error:", err)
 		return []model.Post{}
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		log.Println(resp.Status)
+		log.Println("fetchPosts: fetch error:", resp.StatusCode)
 		return []model.Post{}
 	}
 

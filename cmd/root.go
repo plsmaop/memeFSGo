@@ -36,7 +36,7 @@ func init() {
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "memefsGo",
-	Short: "A silly user space file system that fetchs memes from subreddit and mount them into your folder",
+	Short: "A silly user space file system that fetchs memes from subreddits and mount them into your folder",
 	Long: `MemeFS is a useless user space file system.
 This application fetches memes from the given subreddit periodically and mount them into the given folder.`,
 
