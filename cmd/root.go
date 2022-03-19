@@ -81,7 +81,6 @@ func unmountWhenFUSEPanic(fs *memefs.MemeFS) {
 func Execute() {
 	err := rootCmd.Execute()
 	if err != nil {
-		log.Println(err)
 		os.Exit(1)
 	}
 }
