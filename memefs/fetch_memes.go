@@ -87,7 +87,7 @@ func parsePosts(posts []interface{}) []model.Post {
 		defer resp.Body.Close()
 
 		parsedPosts = append(parsedPosts, model.Post{
-			Title: title,
+			Title: fmt.Sprintf("%v.%v", title, ext),
 			Url:   rawUrl,
 			Size:  uint64(resp.ContentLength),
 		})

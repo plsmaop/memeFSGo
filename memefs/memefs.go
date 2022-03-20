@@ -144,7 +144,7 @@ func (m *MemeFS) updateMemes(posts []model.Post) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	m.memes = append(m.memes, posts...)
+	m.memes = posts
 }
 
 func (m *MemeFS) getMemes() []model.Post {
