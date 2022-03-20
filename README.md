@@ -1,4 +1,4 @@
-# memeFSGo A filesystem whose contents are memes from reddit ![GitHub Actions Workflow](https://github.com/plsmaop/memeFSGo/workflows/CI/badge.svg)
+# memeFSGo - A filesystem whose contents are memes from reddit ![GitHub Actions Workflow](https://github.com/plsmaop/memeFSGo/workflows/CI/badge.svg)
 *Insipred by [memefs](https://github.com/svenstaro/memefs)*
 
 ## Dependency
