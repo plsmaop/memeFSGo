@@ -3,6 +3,8 @@ package helper
 import (
 	"os/user"
 	"strconv"
+
+	"golang.org/x/exp/constraints"
 )
 
 func GetCurUIDAndGID() (uid uint32, gid uint32) {
@@ -17,4 +19,12 @@ func GetCurUIDAndGID() (uid uint32, gid uint32) {
 	}
 
 	return uid, gid
+}
+
+func Min[T constraints.Ordered](a, b T) T {
+	if a > b {
+		return b
+	}
+
+	return a
 }

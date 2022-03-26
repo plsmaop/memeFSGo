@@ -120,12 +120,7 @@ func (m *MemeFSNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, off
 		return nil, syscall.ENOENT
 	}
 
-	end := int(off) + len(dest)
-	if end > len(m.data) {
-		end = len(m.data)
-	}
-
-	return fuse.ReadResultData(m.data[off:end]), fs.OK
+	return fuse.ReadResultData(m.data[off:helper.Min(int(off)+len(dest), len(m.data))]), fs.OK
 }
 
 func (m *MemeFSNode) Release(ctx context.Context, f fs.FileHandle) syscall.Errno {
