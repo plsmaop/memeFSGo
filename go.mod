@@ -1,6 +1,6 @@
 module memefsGo
 
-go 1.17
+go 1.18
 
 require (
 	github.com/hanwen/go-fuse/v2 v2.1.0
@@ -10,5 +10,6 @@ require (
 require (
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	golang.org/x/exp v0.0.0-20220325121720-054d8573a5d8 // indirect
 	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
 )
