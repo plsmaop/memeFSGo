@@ -32,3 +32,4 @@ mkdir memes
 - [ ] Makefile
 - [ ] Github release
 - [ ] Bump version
+- [ ] Windows
